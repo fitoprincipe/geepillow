@@ -5,6 +5,10 @@ Engine imagery.
 
 There are some abstractions that could be used for other purposes eventually.
 
+## Install
+
+> pip install geepillow
+
 The result will look something like this
 
 ![example strip](./examples/strip.png)
