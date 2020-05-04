@@ -68,7 +68,8 @@ class ImageStrip(object):
     def fromList(self, image_list, name=None, name_list=None, vis_params=None,
                  region=None, split_at=4, image_size=(500, 500),
                  description_list=None, images_folder=None, check=True,
-                 download_images=False, save=True, folder=None):
+                 download_images=False, save=True, folder=None,
+                 overlay=None, overlay_style=None):
         """ Download every image and create the strip
 
         :param image_list: Satellite Images (not PIL!!!!!!)
@@ -124,7 +125,8 @@ class ImageStrip(object):
                 imgblock = blocks.EeImageBlock(
                     image, vis_params, region, check=check, name=iname,
                     extension=self.extension, dimensions=image_size,
-                    download=download_images, path=path)
+                    download=download_images, path=path, overlay=overlay,
+                    overlay_style=overlay_style)
                 blocklist = [[imgblock]]
 
                 # IMAGE NAME BLOCK

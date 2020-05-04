@@ -123,8 +123,34 @@ class ImageBlock(Block):
 class EeImageBlock(Block):
     def __init__(self, source, visParams=None, region=None,
                  download=False, check=True, path=None, name=None,
-                 extension=None, dimensions=(500, 500), **kwargs):
-        """ Image Block for Earth Engine images """
+                 extension=None, dimensions=(500, 500), overlay=None,
+                 overlay_style=None, **kwargs):
+        """ Image Block for Earth Engine images
+
+        :param source: the image source
+        :type source: ee.Image
+        :param visParams: visualization parameters
+        :type visParams: dict
+        :param region: region to clip the image with
+        :type region: ee.Geometry or ee.Feature
+        :param download: download image to path
+        :type download: bool
+        :param check: check if image already exists in path
+        :type check: bool
+        :param path: the path to download the file if download is True
+        :type path: str
+        :param name: name for the downloaded file if download is True
+        :type name: str
+        :param extension: extension of the downloaded file. Can be 'jpg' or 'png'
+        :type extension: str
+        :param dimensions: dimensions of the image
+        :type dimensions: tuple or list
+        :param overlay: paint a region over the image
+        :type overlay: ee.FeatureCollection or ee.Feature or ee.Geometry
+        :param overlay_style: the style for the overlay. Allowed key in
+            ee.FeatureCollection.style. Defaults to (width=2, fillColor='FF000000')
+        :type overlay_style: dict
+        """
         super(EeImageBlock, self).__init__(**kwargs)
         self.source = ee.Image(source)
         self.visParams = visParams or dict(min=0, max=1)
@@ -134,6 +160,8 @@ class EeImageBlock(Block):
         self.check = check
         self.visual = self.source.visualize(**self.visParams)
         self.name = name
+        self.overlay = overlay
+        self.overlay_style = overlay_style or dict(width=2, fillColor='FF000000')
 
         if region:
             self.region = geetools.tools.geometry.getRegion(region, True)
@@ -189,12 +217,39 @@ class EeImageBlock(Block):
             return str(y)
 
     @property
+    def visual_image(self):
+        """ The visual image. 8 bits bands: vis-red, vis-green, vis-blue """
+        overlay_image = None
+        if self.overlay:
+            if isinstance(self.overlay, ee.Geometry):
+                overlay = ee.FeatureCollection([ee.Feature(self.overlay)])
+            elif isinstance(self.overlay, ee.Feature):
+                overlay = ee.FeatureCollection([self.overlay])
+            elif isinstance(self.overlay, ee.FeatureCollection):
+                overlay = self.overlay
+            else:
+                overlay = None
+                print('Overlay must be a Geometry, Feature or FeatureCollection, ignoring..')
+            if overlay:
+                overlay_image = ee.Image(overlay.style(**self.overlay_style))
+
+        if overlay_image:
+            source = self.source.visualize(**self.visParams)
+            image = source.blend(overlay_image)
+        else:
+            image = self.source.visualize(**self.visParams)
+
+        return image
+
+    @property
     def url(self):
         if not self._url:
-            vis = geetools.utils.formatVisParams(self.visParams)
+            vis = dict(bands=['vis-red', 'vis-green', 'vis-blue'],
+                       min=0, max=255)
+            vis = geetools.utils.formatVisParams(vis)
             vis.update({'format': self.extension, 'region': self.region,
                         'dimensions': self.format_dimensions(self.dimensions)})
-            url = self.source.getThumbURL(vis)
+            url = self.visual_image.getThumbURL(vis)
             self._url = url
 
         return self._url
