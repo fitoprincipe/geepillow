@@ -1,20 +1,312 @@
 # coding=utf-8
 import ee
 import geetools
-from PIL import ImageFont
-from . import fonts, helpers, blocks
+from PIL import ImageFont, Image
+from . import fonts, helpers, blocks, colors, eeimage
 import os
+from typing import Union, Optional
+import json
 
 
-class ImageStrip(object):
+class SimpleStrip:
+    MODE = "RGBA"
+
+    def __init__(self, images: list,
+                 background_color: Union[str, colors.Color] = colors.color_from_string("white"),
+                 background_opacity: int = 0,
+                 y_space: int = 10,
+                 x_space: int = 15,
+                 ):
+        self._images = images  # 2D array of images
+        self.background_color = background_color
+        self.background_opacity = background_opacity
+        self.x_space = x_space
+        self.y_space = y_space
+
+    @property
+    def images(self):
+        max_cols = max([len(l) for l in self._images])
+        n_rows = len(self._images)
+        empty = [[None]*max_cols for _ in range(n_rows)]
+        for y, row in enumerate(self._images):
+            for x, col in enumerate(row):
+                empty[y][x] = col
+        return empty
+
+    @property
+    def n_columns(self):
+        return len(self.images[0])
+
+    @property
+    def n_rows(self):
+        return len(self.images)
+
+    def row_size(self, row: int) -> int:
+        """Size in pixels of given row"""
+        rowi = self.images[row]
+        h = max([i.size[1] for i in rowi if i is not None])
+        return h
+
+    def column_size(self, column: int) -> int:
+        """Size in pixels of given column"""
+        coli = [row[column] for row in self.images]
+        w = max([i.size[0] for i in coli if i is not None])
+        return w
+
+    @property
+    def width(self):
+        widths = []
+        extra = self.x_space * (self.n_columns - 1)
+        for row in self.images:
+            w = sum(i.size[0] for i in row if i is not None)
+            widths.append(w)
+        return max(widths) + extra
+
+    @property
+    def height(self):
+        heights = []
+        extra = self.y_space * (self.n_rows - 1)
+        for i, _ in enumerate(self.images):
+            heights.append(self.row_size(i))
+        return sum(heights) + extra
+
+    @property
+    def background_size(self):
+        return (self.width, self.height)
+
+    @property
+    def background_image(self):
+        background_hex = self.background_color.hex(self.background_opacity)
+        im = Image.new(self.MODE, self.background_size, background_hex)
+        return im
+
+    def position(self, x: int, y: int) -> tuple:
+        posx= sum([self.column_size(i) for i in range(x)]) + self.x_space * x
+        posy = sum([self.row_size(i) for i in range(y)]) + self.y_space * y
+        return (posx, posy)
+
+    @property
+    def image(self):
+        background = self.background_image
+        for y, row in enumerate(self.images):
+            for x, im in enumerate(row):
+                if im is not None:
+                    pos = self.position(x, y)
+                    background.paste(im, pos)
+        return background
+
+    @classmethod
+    def from_image_list(cls, images: list, n_columns: int, **kwargs):
+        """Create an Image Strip from a list of images"""
+        n_rows = len(images) // n_columns
+        if len(images) % n_columns > 0:
+            n_rows += 1
+
+        final = []
+        # Create the 2D array
+        array = [[None] * n_columns for _ in range(n_rows)]
+
+        # Fill the 2D array with the elements from the input list
+        index = 0
+        for row in range(n_rows):
+            for col in range(n_columns):
+                if index < len(images):
+                    array[row][col] = images[index]
+                index += 1
+
+        return cls(array, **kwargs)
+
+
+class SimpleEECollectionStrip(SimpleStrip):
+    def __init__(self,
+                 collection: ee.ImageCollection,
+                 n_columns: int,
+                 image_size: tuple,
+                 vis_params: Optional[dict] = None,
+                 scale: Optional[int] = None,
+                 region: Optional[Union[ee.Geometry, ee.Feature]] = None,
+                 overlay: Optional[Union[ee.FeatureCollection, ee.Feature, ee.Geometry]] = None,
+                 overlay_style: Optional[dict] = None,
+                 properties: Optional[dict] = None,
+                 font: Optional[fonts.ImageFont] = None,
+                 text_color: Optional[colors.Color] = None,
+                 unique_id_property: Optional[str] = None
+                 ):
+        self.collection = collection
+        self.image_size = image_size
+        self.vis_params = vis_params
+        self.scale = scale
+        self.region = region
+        self.overlay = overlay
+        self.overlay_style = overlay_style
+        self.properties = properties
+        self.unique_id_property = unique_id_property or "system:index"
+        self.font = font
+        self.text_color = text_color
+        self._fetched_images = None
+        self._fetched_properties = None
+        self._image_ids = None
+
+        # image to init super
+
+
+    @property
+    def image_ids(self) -> list:
+        """Unique ids of each image in the collection"""
+        if self._image_ids is None:
+            ids = self.collection.aggregate_array(self.unique_id_property).getInfo()
+            self._image_ids = ids
+        return self._image_ids
+
+    @property
+    def fetched_images(self) -> dict:
+        """A dict of PIL images fetched from GEE --> {unique_id: image}"""
+        if self._fetched_images is None:
+            images = {}
+            for iid in self.image_ids:
+                image = self.collection.filter(ee.Filter.eq(self.unique_id_property, iid)).first()
+                fetched = eeimage.from_image(
+                    image,
+                    self.image_size,
+                    self.vis_params,
+                    self.scale,
+                    self.region,
+                    self.overlay,
+                    self.overlay_style
+                )
+                images[iid] = fetched
+            self._fetched_images = images
+        return self._fetched_images
+
+    @property
+    def fetched_properties(self) -> dict:
+        if self._fetched_properties is None and self.properties is not None:
+            properties = {}
+            for iid in self.image_ids:
+                image = self.collection.filter(ee.Filter.eq(self.unique_id_property, iid)).first()
+                props = image.toDictionary(self.properties).getInfo()
+                properties[iid] = props
+            self._fetched_properties = properties
+        return self._fetched_properties
+
+    def _images_to_init(self):
+        """Compute the image to init super class"""
+        if self.fetched_properties is None:
+            imlist = self.fetched_images.values()
+            return helpers.array_from_list(imlist, self.n_columns)
+        else:
+            images = self.fetched_images
+            imlist = []
+            properties = self.fetched_properties
+            proplist = []
+            for iid, image in images.items():
+                imlist.append(image)
+                property = properties.get(iid, {})
+                propstr = json.dumps(property)
+                block = blocks.TextBlock(
+                    propstr,
+                    font=self.font,
+                    text_color=self.text_color
+                )
+                proplist.append(block)
+
+
+
+
+class ImageStrip:
     """ Create an image strip """
-    def __init__(self, extension="png", **kwargs):
+    def __init__(
+            self,
+            images: list,
+            column_width: int = 500,
+            row_height: int = 500,
+            n_columns: int = 10,
+            descriptions: Optional[list] = None,
+            descriptions_background_color: Union[str, colors.Color] = colors.color_from_string("white"),
+            descriptions_background_opacity: int = 0,
+            descriptions_font: ImageFont = fonts.opensans_regular(12),
+            descriptions_text_color: Union[str, colors.Color] = colors.color_from_string("black"),
+            title: Optional[str] = None,
+            title_size: int = 30,
+            title_font: ImageFont = fonts.opensans_regular(18),
+            title_color: Union[str, colors.Color] = colors.color_from_string("black"),
+            background_color: Union[str, colors.Color] = colors.color_from_string("white"),
+            background_opacity: int = 0,
+            y_space: int = 10,
+            x_space: int = 15,
+            fit_block: bool = True,
+            keep_proportion: bool = True
+    ):
+        """Image strip.
+
+        Args:
+            images: list of PIL images
+        """
+        self.images = images
+        self.column_width = column_width
+        self.row_height = row_height
+        self.n_columns = n_columns
+        self.descriptions = descriptions
+        self.descriptions_background_color = descriptions_background_color
+        self.descriptions_background_opacity = descriptions_background_opacity
+        self.descriptions_font = descriptions_font
+        self.descriptions_text_color = descriptions_text_color
+        self.title = title
+        self.title_size = title_size
+        self.title_font = title_font
+        self.title_color = title_color
+        self.background_color = background_color
+        self.background_opacity = background_opacity
+        self.x_space = x_space
+        self.y_space = y_space
+        self.fit_block = fit_block
+        self.keep_proportion = keep_proportion
+
+    @property
+    def image_blocks(self) -> list:
+        """List of ImageBlock"""
+        make_block = lambda i: blocks.ImageBlock(
+            i, self.fit_block, self.keep_proportion,
+            background_color=self.background_color,
+            background_opacity=self.background_opacity
+        )
+        return [make_block(i) for i in self.images]
+
+    @property
+    def description_blocks(self) -> list:
+        """List of TextBlock for descriptions"""
+        make_block = lambda txt: blocks.TextBlock(
+            txt, self.descriptions_font, self.descriptions_text_color,
+            y_space=self.y_space
+        )
+        final = [make_block(txt) for i in self.descriptions] if self.descriptions else []
+        return final
+
+
+
+class ImageStrip2:
+    """ Create an image strip """
+    def __init__(self, extension="png",
+                 body_size: int = 20,
+                 title_size: int = 30,
+                 font: ImageFont = fonts.opensans_regular(12),
+                 background_color: Union[str, colors.Color] = colors.color_from_string("white"),
+                 background_opacity: int = 0,
+                 title_color: Union[str, colors.Color] = colors.color_from_string("black"),
+                 body_color: Union[str, colors.Color] = colors.color_from_string("red"),
+                 body_opacity: int = 1,
+                 general_width: int = 0,
+                 general_height: int = 0,
+                 y_space: int = 10,
+                 x_space: int = 15,
+                 description: Optional[str] = None
+                 ):
         """
         :Opcionals:
 
         :param extension: Extension. Default: png
         :type extension: str
-        :param body_size: Body size. Defaults to 18
+        :param body_size: Body size. Defaults to 20
         :type body_size: int
         :param title_size: Title's font size. Defaults to 30
         :type title_size: int
@@ -39,17 +331,18 @@ class ImageStrip(object):
         """
         self.extension = extension
 
-        self.body_size = kwargs.get("body_size", 20)
-        self.title_size = kwargs.get("title_size", 30)
-        self.description_size = kwargs.get("title_size", 15)
-        self.font = kwargs.get("font")
-        self.background_color = kwargs.get("background_color", "white")
-        self.title_color = kwargs.get("title_color", "black")
-        self.body_color = kwargs.get("body_color", "black")
-        self.general_width = kwargs.get("general_width", 0)
-        self.general_height = kwargs.get("general_height", 0)
-        self.y_space = kwargs.get("y_space", 10)
-        self.x_space = kwargs.get("x_space", 15)
+        self.body_size = body_size
+        self.title_size = title_size
+        self.description_size = title_size
+        self.font = font
+        self.background_color = background_color
+        self.background_opacity = background_opacity
+        self.title_color = title_color
+        self.body_color = body_color
+        self.general_width = general_width
+        self.general_height = general_height
+        self.y_space = y_space
+        self.x_space = x_space
 
         if not self.font:
             self.body_font = fonts.provided(self.body_size)
@@ -94,7 +387,7 @@ class ImageStrip(object):
             image_list = helpers.listEE2list(image_list, 'Image')
 
         if region:
-            region = geetools.tools.geometry.getRegion(region, True)
+            region = region.bounds()
 
         description_list = description_list or [None]*len(image_list)
         name_list = name_list or [None]*len(image_list)

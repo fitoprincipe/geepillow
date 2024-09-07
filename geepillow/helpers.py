@@ -1,6 +1,9 @@
 # coding=utf-8
 import ee
 import os
+import requests
+from typing import Union
+from pathlib import Path
 
 
 def split(alist, split):
@@ -29,37 +32,37 @@ def listEE2list(listEE, type='Image'):
     return newlist
 
 
-def downloadFile(url, name, extension, path=None):
+def download_file(url: str, path: Union[str, Path]):
     """ Download a file from a given url
 
-    :param url: full url
-    :type url: str
-    :param name: name for the file (can contain a path)
-    :type name: str
-    :param extension: extension for the file
-    :type extension: str
-    :return: the created file (closed)
-    :rtype: file
+    Args:
+        url: full url
+        path: path to save the downloaded file
     """
-    import requests
     response = requests.get(url, stream=True)
     code = response.status_code
-
-    if path is None:
-        path = os.getcwd()
-
-    pathname = os.path.join(path, name)
 
     while code != 200:
         if code == 400:
             return None
         response = requests.get(url, stream=True)
         code = response.status_code
-        size = response.headers.get('content-length',0)
+        size = response.headers.get('content-length', 0)
         if size: print('size:', size)
 
-    with open('{}.{}'.format(pathname, extension), "wb") as handle:
+    with open(path, "wb") as handle:
         for data in response.iter_content():
             handle.write(data)
 
     return handle
+
+def array_from_list(alist: list, n_columns: int) -> list:
+    """Create a 2D list (array) from a list"""
+    n_rows = len(alist) // n_columns
+    if len(alist) % n_columns > 0:
+        n_rows += 1
+
+    final = []
+    # Create the 2D array
+    array = [[None] * n_columns for _ in range(n_rows)]
+    return array
