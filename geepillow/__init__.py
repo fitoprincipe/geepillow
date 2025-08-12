@@ -1,3 +1,5 @@
-# coding=utf-8
-from . import blocks, helpers, strips
-from ._version import __version__
+"""The init file of the package."""
+
+__version__ = "0.0.0"
+__author__ = "Rodrigo Esteban Principe"
+__email__ = "fitoprincipe82@gmail.com"
