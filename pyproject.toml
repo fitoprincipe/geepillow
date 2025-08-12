@@ -21,7 +21,10 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  "deprecated>=1.2.14"
+    "deprecated>=1.2.14",
+    "earthengine-api",
+    "pillow",
+    "requests"
 ]
 
 [[project.authors]]
@@ -40,9 +43,11 @@ Homepage = "https://github.com/fitoprincipe/geepillow"
 
 [project.optional-dependencies]
 test = [
-  "pytest",
-  "pytest-cov",
-  "pytest-deadfixtures"
+    "pytest",
+    "pytest-cov",
+    "pytest-deadfixtures",
+    "pytest-regressions",
+    "pytest-gee"
 ]
 doc = [
   "sphinx>=6.2.1",
