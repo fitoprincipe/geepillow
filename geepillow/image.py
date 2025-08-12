@@ -1,22 +1,24 @@
+"""image module."""
+
 from io import BytesIO
 
-from PIL import Image
 import ee
 import requests
+from PIL import Image
 
 from geepillow import colors
 
 
 def from_eeimage(
-        image: ee.Image,
-        dimensions: tuple,
-        viz_params: dict | None = None,
-        scale: float | None = None,
-        region: ee.Geometry | ee.Feature | None = None,
-        overlay: ee.FeatureCollection | ee.Feature | ee.Geometry | None = None,
-        overlay_style: dict | None = None
+    image: ee.Image,
+    dimensions: tuple,
+    viz_params: dict | None = None,
+    scale: float | None = None,
+    region: ee.Geometry | ee.Feature | None = None,
+    overlay: ee.FeatureCollection | ee.Feature | ee.Geometry | None = None,
+    overlay_style: dict | None = None,
 ) -> Image:
-    """Create a Pillow Image from an ee.Image
+    """Create a Pillow Image from an ee.Image.
 
     Args:
         image: the ee.Image
@@ -27,15 +29,12 @@ def from_eeimage(
             - max: the maximum value.
             - palette: a list of colors to use as a palette. Will only work with one single band.
         scale: spatial resolution of the image. If None it'll use the image scale.
-        region: the region to extract the image from. If None it'll use the boudaries of the image.
+        region: the region to extract the image from. If None it'll use the boundaries of the image.
         overlay: a vector layer to overlay on top of the image
         overlay_style: style of the vector layer to overlay
     """
     viz_params = viz_params or dict(min=0, max=1)
-    overlay_style = overlay_style or dict(
-        width=2,
-        fillColor=colors.create("white").hex(0)
-    )
+    overlay_style = overlay_style or dict(width=2, fillColor=colors.create("white").hex(0))
     if scale is not None:
         proj = ee.Projection("EPSG:3857").atScale(scale)
         image = image.reproject(proj)
@@ -53,11 +52,7 @@ def from_eeimage(
         viz_image = image.visualize(**viz_params)
 
     viz = {"bands": "vis-red,vis-green,vis-blue", "min": "0,0,0", "max": "255,255,255"}
-    viz.update({
-        'format': 'png',
-        'region': region,
-        'dimensions': dimensions
-    })
+    viz.update({"format": "png", "region": region, "dimensions": dimensions})
     url = viz_image.getThumbURL(viz)
     raw = requests.get(url)
     return Image.open(BytesIO(raw.content))

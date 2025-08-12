@@ -1,7 +1,8 @@
 """Pytest session configuration."""
+
+import ee
 import pytest
 import pytest_gee
-import ee
 
 
 def pytest_configure() -> None:
@@ -22,7 +23,12 @@ def s2_image() -> ee.Image:
 def s2_image_overlay() -> ee.Geometry:
     """A Geometry Overlay."""
     return ee.Geometry.Polygon(
-        [[[-71.73258, -42.81121],
-          [-71.73258, -42.90131],
-          [-71.58392, -42.90131],
-          [-71.58392, -42.81121]]])
+        [
+            [
+                [-71.73258, -42.81121],
+                [-71.73258, -42.90131],
+                [-71.58392, -42.90131],
+                [-71.58392, -42.81121],
+            ]
+        ]
+    )

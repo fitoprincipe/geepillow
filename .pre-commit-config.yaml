@@ -49,4 +49,3 @@ repos:
       - id: check-merge-conflict
         stages: [pre-commit]
         args: [--assume-in-merge]
-
