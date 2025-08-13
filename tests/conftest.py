@@ -1,13 +1,52 @@
 """Pytest session configuration."""
 
+from io import BytesIO
+
 import ee
 import pytest
 import pytest_gee
+from PIL import Image  # Add this import for type hinting
 
 
 def pytest_configure() -> None:
     """Initialize earth engine according to the environment."""
     pytest_gee.init_ee_from_service_account()
+
+
+class PILImageRegression:
+    """A helper class to encapsulate image regression checking."""
+
+    def __init__(self, image_regression_fixture):
+        """
+        Initializes the checker with the image_regression fixture.
+
+        Args:
+            image_regression_fixture: The pytest-image-regression fixture.
+        """
+        self._image_regression = image_regression_fixture
+
+    def check(self, image: Image.Image):
+        """
+        Converts a PIL image to bytes and performs a regression check.
+
+        Args:
+            image (PIL.Image.Image): The PIL image to check.
+        """
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        buffer.seek(0)
+        self._image_regression.check(buffer.read())
+
+
+@pytest.fixture
+def pil_image_regression(image_regression):
+    """
+    A fixture that returns an ImageChecker instance.
+
+    This provides a convenient `.check(image)` method for performing
+    image regression on PIL images.
+    """
+    return PILImageRegression(image_regression)
 
 
 @pytest.fixture
