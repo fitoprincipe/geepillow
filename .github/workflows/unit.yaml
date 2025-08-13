@@ -10,6 +10,8 @@ on:
 env:
   FORCE_COLOR: 1
   PIP_ROOT_USER_ACTION: ignore
+  EARTHENGINE_TOKEN: ${{ secrets.EARTHENGINE_TOKEN }}
+  EARTHENGINE_PROJECT: ${{ secrets.EARTHENGINE_PROJECT }}
 
 jobs:
   lint:
