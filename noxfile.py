@@ -55,7 +55,7 @@ def mypy(session: nox.Session):
     """Run a mypy check of the lib."""
     # waiting for a fix to https://github.com/laurent-laporte-pro/deprecated/issues/63
     # so we are forced to install "types-deprecated"
-    session.install("mypy", "types-deprecated")
+    session.install("mypy", "types-deprecated", "types-requests")
     test_files = session.posargs or ["geepillow"]
     session.run("mypy", *test_files)
 

@@ -1,6 +1,7 @@
 """image module."""
 
 from io import BytesIO
+from typing import Any
 
 import ee
 import requests
@@ -51,7 +52,11 @@ def from_eeimage(
     else:
         viz_image = image.visualize(**viz_params)
 
-    viz = {"bands": "vis-red,vis-green,vis-blue", "min": "0,0,0", "max": "255,255,255"}
+    viz: dict[str, Any] = {
+        "bands": "vis-red,vis-green,vis-blue",
+        "min": "0,0,0",
+        "max": "255,255,255",
+    }
     viz.update({"format": "png", "region": region, "dimensions": dimensions})
     url = viz_image.getThumbURL(viz)
     raw = requests.get(url)

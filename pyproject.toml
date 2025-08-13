@@ -64,7 +64,8 @@ only-include = ["geepillow"]
 dependencies = [
   "pre-commit",
   "commitizen",
-  "nox[uv]"
+  "nox[uv]",
+  "types-requests"
 ]
 post-install-commands = ["pre-commit install"]
 
