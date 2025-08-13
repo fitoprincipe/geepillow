@@ -36,7 +36,7 @@ def from_eeimage(
     viz_params = viz_params or dict(min=0, max=1)
     overlay_style = overlay_style or dict(width=2, fillColor=colors.create("white").hex(0))
     if scale is not None:
-        proj = ee.Projection("EPSG:3857").atScale(scale)
+        proj = image.select([0]).projection().atScale(scale)
         image = image.reproject(proj)
 
     if isinstance(overlay, ee.Geometry):
