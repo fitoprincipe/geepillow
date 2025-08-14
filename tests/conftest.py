@@ -1,6 +1,7 @@
 """Pytest session configuration."""
 
 from io import BytesIO
+from pathlib import Path
 
 import ee
 import pytest
@@ -47,6 +48,14 @@ def pil_image_regression(image_regression):
     image regression on PIL images.
     """
     return PILImageRegression(image_regression)
+
+
+@pytest.fixture
+def optical_pil_image() -> Image.Image:
+    """Optical image loaded with PIL."""
+    # Construct the path to your data file
+    data_file = Path(__file__).parent / "data" / "optical_image.png"
+    return Image.open(data_file)
 
 
 @pytest.fixture

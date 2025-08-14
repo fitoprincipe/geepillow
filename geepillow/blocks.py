@@ -1,5 +1,16 @@
-"""Blocks module."""
+"""Blocks module.
 
+Blocks are the basic units to use in strips and grids, and do not overlay with each other.
+
+There are 2 types:
+
+- ImageBlock: contains an image inside.
+- TextBlock: contains text inside.
+
+If the user needs to add text overlaying the image, can do it using the PIL library.
+"""
+
+from pathlib import Path
 from typing import Literal
 
 from PIL import Image as ImPIL
@@ -121,3 +132,116 @@ class Block:
         """The background image."""
         im = ImPIL.new(mode, self.size, self.background_hex)
         return im
+
+
+class ImageBlock(Block):
+    def __init__(
+        self,
+        image: ImPIL.Image,
+        position: tuple | PositionType = "center-center",
+        fit_block: bool = True,
+        keep_proportion: bool = True,
+        size: tuple | None = None,
+        background_color: str | Color = "white",
+        background_opacity: float = 0,
+    ):
+        """Image Block for PIL images.
+
+        Args:
+            image: the image.
+            position: position of the image inside the block.
+            fit_block: if True the element's boundaries will never exceed the block.
+            keep_proportion: keep proportion (ratio) of the image.
+            size: size of the block (not the image). Defaults to the image size.
+            background_color: color of the background.
+            background_opacity: opacity of the background.
+        """
+        size = size or image.size
+        self._image = image  # store the original image
+        super(ImageBlock, self).__init__(
+            size=size, background_color=background_color, background_opacity=background_opacity
+        )
+        self.position = position
+        self.fit_block = fit_block
+        self.keep_proportion = keep_proportion
+
+    @property
+    def xy(self):
+        """Coordinates (X,Y) of the top-left corner of the inner image."""
+        if isinstance(self.position, str):
+            x_space = self.width - self.element.width
+            y_space = self.height - self.element.height
+            options = {
+                "top-left": (0, 0),
+                "top-center": (x_space / 2, 0),
+                "top-right": (x_space, 0),
+                "center-left": (0, y_space / 2),
+                "center-center": (x_space / 2, y_space / 2),
+                "center-right": (x_space, y_space / 2),
+                "bottom-left": (0, y_space),
+                "bottom-center": (x_space / 2, y_space),
+                "bottom-right": (x_space, y_space),
+            }
+            try:
+                pos = options[self.position]
+            except KeyError:
+                raise KeyError(f"Position '{self.position}' not in {list(options.keys())}")
+            return int(pos[0]), int(pos[1])
+        else:
+            return self.position
+
+    @property
+    def element(self) -> ImPIL.Image:
+        """Element.
+
+        The original image will be modified according to size of the block and properties fit_block and keep_proportion.
+        """
+        # use the original image to compute the resizing parameters
+        image_width, image_height = self._image.size
+        block_width, block_height = self.size
+        # is the image wider or higher than the block?
+        is_wider, is_higher = image_width > block_width, image_height > block_height
+        element = self._image
+        if self.fit_block:
+            # resize to fit the block
+            if self.keep_proportion:
+                proportion = self._image.size[0] / self._image.size[1]
+                if is_wider and is_higher:
+                    # fit according to the block proportions
+                    if proportion >= 0:  # its width is more than its height
+                        # adapt image to the block height
+                        new_height = block_height
+                        new_width = int(new_height * proportion)
+                    else:
+                        # adapt image to the block width
+                        new_width = block_width
+                        new_height = int(new_width / proportion)
+                elif is_wider:  # is wider than the block but not higher
+                    new_width = block_width
+                    new_height = int(new_width / proportion)
+                elif is_higher:  # is higher than the block but not wider
+                    new_height = block_height
+                    new_width = int(new_height * proportion)
+                else:  # is not wider or higher than the block
+                    new_width = image_width
+                    new_height = image_height
+                new_size = (new_width, new_height)
+            else:
+                new_size = (block_width, block_height)
+            if new_size != self._image.size:
+                # resize only is size changed
+                element = element.resize(new_size)
+        return element
+
+    @property
+    def image(self) -> ImPIL:
+        """Image of the block."""
+        im = self.background_image()
+        im.paste(self.element, self.xy)
+        return im
+
+    @classmethod
+    def from_file(cls, filename: str | Path, **kwargs):
+        """Create an ImageBlock from a file."""
+        filename = Path(filename)
+        return cls(ImPIL.open(filename), **kwargs)
