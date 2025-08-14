@@ -1,6 +1,6 @@
 """Test blocks module."""
 
-from geepillow import blocks
+from geepillow import blocks, fonts
 
 
 class TestBlock:
@@ -233,4 +233,52 @@ class TestImageBlock:
             background_color="blue",
             position="bottom-right",
         )
+        pil_image_regression.check(block.image)
+
+
+class TestTextBlock:
+    """Test the TextBlock."""
+
+    def test_text_simple(self, pil_image_regression):
+        """Test a simple text block."""
+        block = blocks.TextBlock("simple")
+        pil_image_regression.check(block.image)
+
+    def test_text_background_color(self, pil_image_regression):
+        """Test a simple text block."""
+        block = blocks.TextBlock("simple", background_color="red")
+        pil_image_regression.check(block.image)
+
+    def test_text_color(self, pil_image_regression):
+        """Test a simple text block with colored text."""
+        block = blocks.TextBlock("simple", size=(50, 50), text_color="red", background_color="blue")
+        pil_image_regression.check(block.image)
+
+    def test_text_font_size(self, pil_image_regression):
+        """Test a simple text block with colored text."""
+        font = fonts.opensans_regular(24)
+        block = blocks.TextBlock(
+            "simple",
+            font=font,
+            size=(100, 100),
+            text_color="red",
+            text_opacity=1,
+            background_color="blue",
+        )
+        pil_image_regression.check(block.image)
+
+    def tests_text_change_font(self, pil_image_regression):
+        """Test a simple text block with colored text."""
+        font = fonts.opensans_regular(24)
+        # this block should look has "test_text_font_size" output
+        block = blocks.TextBlock(
+            "simple",
+            font=font,
+            size=(100, 100),
+            text_color="red",
+            text_opacity=1,
+            background_color="blue",
+        )
+        # now we change the font
+        block.font = fonts.opensans_bold(12)
         pil_image_regression.check(block.image)

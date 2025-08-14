@@ -1,11 +1,12 @@
 """Fonts module."""
 
 import sys
+from functools import lru_cache
 
 from PIL import ImageFont as fontmodule
 from PIL.ImageFont import FreeTypeFont, ImageFont, TransposedFont
 
-if sys.version_info[0] > 3:
+if sys.version_info[0] > 2:
     import urllib.request as urllib2
 else:
     import urllib2
@@ -31,6 +32,7 @@ def load_data(filename: Path):
             return thefile.read()
 
 
+@lru_cache(maxsize=128)
 def load_ttf(filename: Path, size: float) -> FreeTypeFont:
     """Load a Font from a file.
 
@@ -44,6 +46,7 @@ def load_ttf(filename: Path, size: float) -> FreeTypeFont:
     return fontmodule.truetype(font_file, size)
 
 
+@lru_cache(maxsize=128)
 def provided(size) -> FreeTypeFont:
     """Get font from URL."""
     b = urllib2.urlopen(URL_FONT)
@@ -83,6 +86,8 @@ def create(font: str | ImageFont | Path, size: float) -> ImageFont | FreeTypeFon
             font = f"{font}.ttf"
         return load_ttf(Path(font), size)
     if isinstance(font, (ImageFont, FreeTypeFont, TransposedFont)):
+        if hasattr(font, "path") and hasattr(font, "size") and font.path and font.size != size:
+            return load_ttf(Path(font.path), size)
         return font
     if isinstance(font, Path):
         return load_ttf(font, size)

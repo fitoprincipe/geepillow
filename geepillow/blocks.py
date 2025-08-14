@@ -14,12 +14,14 @@ from pathlib import Path
 from typing import Literal
 
 from PIL import Image as ImPIL
+from PIL import ImageDraw
 from PIL.ImageFont import FreeTypeFont, ImageFont, TransposedFont
 
 from geepillow import colors, fonts
 from geepillow.colors import Color
 
 DEFAULT_FONT = fonts.opensans_regular(12)
+DEFAULT_MODE = "RGBA"
 
 FontType = ImageFont | FreeTypeFont | TransposedFont
 
@@ -40,13 +42,13 @@ class Block:
     """Basic Block."""
 
     DEFAULT_SIZE = (500, 500)
-    DEFAULT_MODE = "RGBA"
 
     def __init__(
         self,
         size: tuple = DEFAULT_SIZE,
         background_color: str | Color = "white",
         background_opacity: float = 1,
+        mode: str = DEFAULT_MODE,
     ):
         """Basic Block.
 
@@ -60,16 +62,18 @@ class Block:
             size: size of the block in pixels.
             background_color: color of the background.
             background_opacity: opacity of the background.
+            mode: mode of the background image.
         """
         self._size = size or self.DEFAULT_SIZE
         self._width, self._height = self._size
         self._background_color = colors.create(background_color)
         self.background_opacity = background_opacity
+        self.mode = mode
 
     @property
     def image(self):
         """For basic blocks the image is the background image."""
-        return self.background_image()
+        return self.background_image
 
     @property
     def background_hex(self):
@@ -128,9 +132,10 @@ class Block:
         size[0] = height
         self._size = tuple(size)
 
-    def background_image(self, mode: str = "RGBA"):
+    @property
+    def background_image(self):
         """The background image."""
-        im = ImPIL.new(mode, self.size, self.background_hex)
+        im = ImPIL.new(self.mode, self.size, self.background_hex)
         return im
 
 
@@ -144,6 +149,7 @@ class ImageBlock(Block):
         size: tuple | None = None,
         background_color: str | Color = "white",
         background_opacity: float = 0,
+        mode: str = DEFAULT_MODE,
     ):
         """Image Block for PIL images.
 
@@ -155,11 +161,16 @@ class ImageBlock(Block):
             size: size of the block (not the image). Defaults to the image size.
             background_color: color of the background.
             background_opacity: opacity of the background.
+            mode: mode of the background image.
         """
         size = size or image.size
-        self._image = image  # store the original image
+        # convert image to the block mode
+        self._image = image.convert(mode)  # store the original image
         super(ImageBlock, self).__init__(
-            size=size, background_color=background_color, background_opacity=background_opacity
+            size=size,
+            background_color=background_color,
+            background_opacity=background_opacity,
+            mode=mode,
         )
         self.position = position
         self.fit_block = fit_block
@@ -236,7 +247,7 @@ class ImageBlock(Block):
     @property
     def image(self) -> ImPIL:
         """Image of the block."""
-        im = self.background_image()
+        im = self.background_image
         im.paste(self.element, self.xy)
         return im
 
@@ -245,3 +256,106 @@ class ImageBlock(Block):
         """Create an ImageBlock from a file."""
         filename = Path(filename)
         return cls(ImPIL.open(filename), **kwargs)
+
+
+class TextBlock(ImageBlock):
+    """TextBlock."""
+
+    def __init__(
+        self,
+        text: str,
+        position: tuple | PositionType = "center-center",
+        font: FontType = DEFAULT_FONT,
+        text_color: str | Color = "black",
+        text_opacity: float | int = 1,
+        background_color: str | Color = "white",
+        background_opacity: float | int = 1,
+        fit_block: bool = False,
+        keep_proportion: bool = True,
+        size: tuple | None = None,
+        mode: str = DEFAULT_MODE,
+    ):
+        """TextBlock.
+
+        Args:
+            text: text to display.
+            position: position of the text inside the block.
+            font: font to use. The size the font is included in this parameter.
+            text_color: color of the text.
+            text_opacity: opacity of the text.
+            background_color: color of the background.
+            background_opacity: opacity of the background.
+            fit_block: if True the element'
+            keep_proportion: keep proportion (ratio) of the image.
+            size: size of the block (not the image). Defaults to the image size.
+            mode: mode of the background image.
+        """
+        self._text = text
+        self._text_color = colors.create(text_color)
+        self.text_opacity = text_opacity
+        self._font = font
+        self._background_color = colors.create(background_color)
+        self.background_opacity = background_opacity
+        self.mode = mode
+        super(TextBlock, self).__init__(
+            image=self.create_text_image(),
+            position=position,
+            fit_block=fit_block,
+            keep_proportion=keep_proportion,
+            background_opacity=background_opacity,
+            background_color=background_color,
+            size=size,
+            mode=mode,
+        )
+
+    @property
+    def text(self) -> str:
+        """Text to display."""
+        return self._text
+
+    @property
+    def font(self):
+        """Font to use."""
+        return self._font
+
+    @font.setter
+    def font(self, font: ImageFont | FreeTypeFont | TransposedFont):
+        """Set or modify the font to use."""
+        self._font = font
+        self._image = self.create_text_image()
+
+    @property
+    def text_color(self) -> Color:
+        """Text color."""
+        return self._text_color
+
+    @text_color.setter
+    def text_color(self, color: str | Color):
+        """Set or modify the text color."""
+        self._text_color = colors.create(color)
+
+    @property
+    def text_height(self) -> int:
+        """Calculate height for a multiline text."""
+        alist = self.text.split("\n")
+        alt = 0
+        for line in alist:
+            alt += self.font.getbbox(line)[3] + self.font.getbbox(line)[1]
+        return int(alt)
+
+    @property
+    def text_width(self) -> int:
+        """Calculate width for a multiline text."""
+        alist = self.text.split("\n")
+        widths = []
+        for line in alist:
+            w = self.font.getbbox(line)[2]
+            widths.append(w)
+        return int(max(widths))
+
+    def create_text_image(self) -> ImPIL.Image:
+        """Create a text image."""
+        image = ImPIL.new(self.mode, (self.text_width, self.text_height), self.background_hex)
+        draw = ImageDraw.Draw(image)
+        draw.text((0, 0), self.text, font=self.font, fill=self.text_color.hex(self.text_opacity))
+        return image
