@@ -80,3 +80,9 @@ def s2_image_overlay() -> ee.Geometry:
             ]
         ]
     )
+
+
+@pytest.fixture
+def s2_image_viz() -> dict:
+    """Sentinel 2 image visualization parameters."""
+    return {"bands": ["B8", "B11", "B4"], "min": 0, "max": 4500}
