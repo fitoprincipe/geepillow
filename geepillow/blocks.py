@@ -46,7 +46,7 @@ class Block:
         self,
         size: tuple = DEFAULT_SIZE,
         background_color: str | Color = "white",
-        background_opacity: float = 0,
+        background_opacity: float = 1,
     ):
         """Basic Block.
 

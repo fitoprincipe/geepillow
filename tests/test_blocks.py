@@ -8,7 +8,7 @@ class TestBlock:
 
     def test_simple(self, pil_image_regression):
         """Test a simple block."""
-        block = blocks.Block(background_color="blue", background_opacity=1)
+        block = blocks.Block(background_color="blue")
         assert block.size == (500, 500)
         assert block.width == 500
         assert block.height == 500
@@ -17,7 +17,7 @@ class TestBlock:
 
     def test_resize(self, pil_image_regression):
         """Test resizing a simple block."""
-        block = blocks.Block(background_color="red", background_opacity=1)
+        block = blocks.Block(background_color="red")
         block.size = (100, 100)
         assert block.size == (100, 100)
         assert block.width == 100
@@ -36,12 +36,7 @@ class TestImageBlock:
 
     def test_image_inside_bigger(self, optical_pil_image, pil_image_regression):
         """Test an image inside a bigger block."""
-        block = blocks.ImageBlock(
-            optical_pil_image,
-            size=(800, 800),
-            background_color="red",
-            background_opacity=1,
-        )
+        block = blocks.ImageBlock(optical_pil_image, size=(800, 800), background_color="red")
         pil_image_regression.check(block.image)
 
     def test_image_inside_smaller_fit_and_keep_proportion_same_proportion(
@@ -55,7 +50,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(100, 100),
             background_color="red",
-            background_opacity=1,
             keep_proportion=True,
             fit_block=True,
         )
@@ -72,7 +66,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(300, 100),
             background_color="red",
-            background_opacity=1,
             keep_proportion=True,
             fit_block=True,
         )
@@ -89,7 +82,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 100),
             background_color="red",
-            background_opacity=1,
             keep_proportion=True,
             fit_block=True,
         )
@@ -106,7 +98,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(100, 800),
             background_color="red",
-            background_opacity=1,
             keep_proportion=True,
             fit_block=True,
         )
@@ -126,7 +117,6 @@ class TestImageBlock:
             size=(200, 600),
             position="top-left",
             background_color="red",
-            background_opacity=1,
             keep_proportion=True,
             fit_block=True,
         )
@@ -142,7 +132,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(200, 600),
             background_color="red",
-            background_opacity=1,
             keep_proportion=False,
             fit_block=True,
         )
@@ -160,7 +149,6 @@ class TestImageBlock:
             size=(200, 600),
             position="top-left",
             background_color="red",
-            background_opacity=1,
             keep_proportion=True,
             fit_block=False,
         )
@@ -172,7 +160,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 800),
             background_color="blue",
-            background_opacity=1,
             position="top-left",
         )
         pil_image_regression.check(block.image)
@@ -183,7 +170,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 800),
             background_color="blue",
-            background_opacity=1,
             position="top-center",
         )
         pil_image_regression.check(block.image)
@@ -205,7 +191,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 800),
             background_color="blue",
-            background_opacity=1,
             position="center-left",
         )
         pil_image_regression.check(block.image)
@@ -216,7 +201,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 800),
             background_color="blue",
-            background_opacity=1,
             position="center-right",
         )
         pil_image_regression.check(block.image)
@@ -227,7 +211,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 800),
             background_color="blue",
-            background_opacity=1,
             position="bottom-left",
         )
         pil_image_regression.check(block.image)
@@ -238,7 +221,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 800),
             background_color="blue",
-            background_opacity=1,
             position="bottom-center",
         )
         pil_image_regression.check(block.image)
@@ -249,7 +231,6 @@ class TestImageBlock:
             optical_pil_image,
             size=(800, 800),
             background_color="blue",
-            background_opacity=1,
             position="bottom-right",
         )
         pil_image_regression.check(block.image)
