@@ -150,7 +150,7 @@ class ImageBlock(Block):
         keep_proportion: bool = True,
         size: tuple | None = None,
         background_color: str | Color = "white",
-        background_opacity: float = 0,
+        background_opacity: float = 1,
         mode: str = DEFAULT_MODE,
     ):
         """Image Block for PIL images.
