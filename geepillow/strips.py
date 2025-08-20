@@ -19,7 +19,6 @@ class Strip(ImageBlock):
         blocks: list[Block],
         space: float = 10,
         orientation: Literal["horizontal", "vertical"] = "horizontal",
-        proxy_block: Block | None = None,
         position: tuple | PositionType = "center-center",
         fit_block: bool = True,
         keep_proportion: bool = True,
@@ -41,20 +40,16 @@ class Strip(ImageBlock):
             position: position of the strip inside the block.
             background_color: color of the background.
             background_opacity: opacity of the background.
-            proxy_block: a block that will replace None values. The height of
-                it will be ignored and changed to the max height of the row's
-                elements.
             fit_block: if True the element's boundaries will never exceed the block.
             keep_proportion: keep proportion (ratio) of the image.
-            size: size of the block (not the image).
+            size: size of the strip.
             mode: mode of the background image.
         """
         if orientation not in ["horizontal", "vertical"]:
             raise ValueError(f"Invalid orientation {orientation}.")
-        self._proxy_block = proxy_block or Block()
         self.orientation = orientation
-        self._blocks = blocks
         self.space = space
+        self._blocks = blocks
         self._background_color = colors.create(background_color)
         self.background_opacity = background_opacity
         self.mode = mode
@@ -71,19 +66,15 @@ class Strip(ImageBlock):
         )
 
     @property
-    def proxy_block(self):
-        """Proxy block."""
-        self._proxy_block.size = (self.height, self.height)
-        return self._proxy_block
-
-    @property
     def blocks(self):
         """Replace None with proxy blocks."""
         blocks = []
         for block in self._blocks:
             if block.mode != self.mode:
                 raise ValueError("All blocks must have the same mode.")
-            blocks.append(block) if block is not None else blocks.append(self.proxy_block)
+            if block is None:
+                continue
+            blocks.append(block)
         return blocks
 
     @property
