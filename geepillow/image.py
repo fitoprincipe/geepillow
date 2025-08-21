@@ -12,7 +12,7 @@ from geepillow import colors
 
 def from_eeimage(
     image: ee.Image,
-    dimensions: tuple,
+    dimensions: tuple | int,
     viz_params: dict | None = None,
     scale: float | None = None,
     region: ee.Geometry | ee.Feature | None = None,
@@ -23,7 +23,8 @@ def from_eeimage(
 
     Args:
         image: the ee.Image
-        dimensions: dimensions of the image in pixels.
+        dimensions: dimensions of the image, in pixels. If only one number is passed, it is used as the maximum, and
+            the other dimension is computed by proportional scaling.
         viz_params: dict with visualization parameters. Admits the following keys:
             - bands: a list of the 3 bands that will represent R G B, or one band that will work with palette.
             - min: the minimum value.

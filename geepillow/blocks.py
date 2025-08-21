@@ -13,14 +13,12 @@ If the user needs to add text overlaying the image, can do it using the PIL libr
 from pathlib import Path
 from typing import Literal
 
-import ee
 from PIL import Image as ImPIL
 from PIL import ImageDraw
 from PIL.ImageFont import FreeTypeFont, ImageFont, TransposedFont
 
 from geepillow import colors, fonts
 from geepillow.colors import Color
-from geepillow.image import from_eeimage
 
 DEFAULT_FONT = fonts.opensans_regular(12)
 DEFAULT_MODE = "RGBA"
@@ -361,74 +359,3 @@ class TextBlock(ImageBlock):
         draw = ImageDraw.Draw(image)
         draw.text((0, 0), self.text, font=self.font, fill=self.text_color.hex(self.text_opacity))
         return image
-
-
-class EEImageBlock(ImageBlock):
-    """EEImageBlock."""
-
-    def __init__(
-        self,
-        ee_image: ee.Image,
-        viz_params: dict | None = None,
-        dimensions: tuple | None = None,
-        scale: int | None = None,
-        region: ee.Geometry | ee.Feature | None = None,
-        path: str | Path | None = None,
-        overlay: ee.FeatureCollection | ee.Feature | ee.Geometry | None = None,
-        overlay_style: dict | None = None,
-        position: tuple | PositionType = "center-center",
-        fit_block: bool = True,
-        keep_proportion: bool = True,
-        size: tuple = Block.DEFAULT_SIZE,
-        background_color: str | Color = "white",
-        background_opacity: float = 1,
-        mode: str = DEFAULT_MODE,
-    ):
-        """EEImageBlock.
-
-        By default, the size of the image matches the size of the block.
-
-        Args:
-            ee_image: Earth Engine image.
-            viz_params: Visualization parameters.
-            dimensions: dimensions of the image in pixels.
-            scale: spatial resolution.
-            region: region of interest to "clip" the image to.
-            path: a Path to store the fetched image.
-            overlay: a feature collection to overlay on top of the image.
-            overlay_style: style of the overlay.
-            position: position of the image inside the block.
-            fit_block: if True the element's boundaries will never exceed the block.
-            keep_proportion: keep proportion (ratio) of the image.
-            size: size of the block (not the image).
-            background_color: color of the background.
-            background_opacity: opacity of the background.
-            mode: mode of the background image
-        """
-        self.ee_image = ee_image
-        self.viz_params = viz_params or dict(min=0, max=1)
-        self.dimensions = dimensions or size
-        self.region = region
-        self.path = Path(path) if path is not None else None
-        self.overlay = overlay
-        self.overlay_style = overlay_style
-        self.scale = scale
-        image = from_eeimage(
-            image=ee_image,
-            dimensions=self.dimensions,
-            viz_params=self.viz_params,
-            scale=self.scale,
-            region=self.region,
-            overlay=overlay,
-            overlay_style=overlay_style,
-        )
-        super(EEImageBlock, self).__init__(
-            image=image,
-            position=position,
-            fit_block=fit_block,
-            keep_proportion=keep_proportion,
-            size=size,
-            background_color=background_color,
-            background_opacity=background_opacity,
-            mode=mode,
-        )

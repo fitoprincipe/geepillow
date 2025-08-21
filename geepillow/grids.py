@@ -1,9 +1,13 @@
 """A gris is just a nested strip."""
 
+import logging
+
 from PIL import Image as ImPIL
 
 from geepillow import colors
 from geepillow.blocks import DEFAULT_MODE, Block, ImageBlock, PositionType
+
+logger = logging.getLogger(__name__)
 
 
 class Grid(ImageBlock):
@@ -64,7 +68,10 @@ class Grid(ImageBlock):
             row_blocks = []
             for block in row:
                 if block is not None and block.mode != self.mode:
-                    raise ValueError("All blocks must have the same mode.")
+                    # raise ValueError("All blocks must have the same mode.")
+                    logger.warning(
+                        f"Not all blocks have the same mode. Found {block.mode} and {self.mode}"
+                    )
                 row_blocks.append(block)
             blocks.append(row_blocks)
         return blocks
@@ -84,7 +91,7 @@ class Grid(ImageBlock):
         Args:
             n_column: the position of the column.
         """
-        column_blocks = [row[n_column] for row in self.blocks]
+        column_blocks = [row[n_column] for row in self.blocks if len(row) > n_column]
         return max([block.width for block in column_blocks if block is not None])
 
     @property
