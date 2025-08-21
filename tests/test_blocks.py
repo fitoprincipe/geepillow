@@ -1,6 +1,6 @@
 """Test blocks module."""
 
-from geepillow import blocks, fonts
+from geepillow import blocks, eeblocks, fonts
 
 
 class TestBlock:
@@ -289,14 +289,14 @@ class TestEEImageBlock:
 
     def test_eeimage_simple(self, s2_image, s2_image_overlay, s2_image_viz, pil_image_regression):
         """Test EEImageBlock."""
-        block = blocks.EEImageBlock(s2_image, viz_params=s2_image_viz, region=s2_image_overlay)
+        block = eeblocks.EEImageBlock(s2_image, viz_params=s2_image_viz, region=s2_image_overlay)
         pil_image_regression.check(block.image)
 
     def test_eeimage_bigger_block(
         self, s2_image, s2_image_overlay, s2_image_viz, pil_image_regression
     ):
         """Test EEImageBlock with a bigger block than dimensions."""
-        block = blocks.EEImageBlock(
+        block = eeblocks.EEImageBlock(
             s2_image,
             viz_params=s2_image_viz,
             region=s2_image_overlay,

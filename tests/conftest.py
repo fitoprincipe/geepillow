@@ -68,6 +68,48 @@ def s2_image() -> ee.Image:
 
 
 @pytest.fixture
+def s2_collection_geometry() -> ee.Geometry:
+    """A geometry for the S2 Collection."""
+    return ee.Geometry.Polygon(
+        [
+            [
+                [-63.1207279551548, -27.514421899185486],
+                [-63.1207279551548, -27.604210067517904],
+                [-63.00331157331886, -27.604210067517904],
+                [-63.00331157331886, -27.514421899185486],
+            ]
+        ]
+    )
+
+
+@pytest.fixture
+def s2_field() -> ee.Geometry:
+    """A field to overlay in a S2 image."""
+    return ee.Geometry.Polygon(
+        [
+            [
+                [-63.06716960554542, -27.566557801770216],
+                [-63.06373637800636, -27.551415512075334],
+                [-63.08948558454933, -27.544338248641512],
+                [-63.09497874861183, -27.561840327455865],
+            ]
+        ]
+    )
+
+
+@pytest.fixture
+def s2_collection(s2_collection_geometry) -> ee.ImageCollection:
+    """A Sentinel-2 image collection."""
+    col = (
+        ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
+        .filterBounds(s2_collection_geometry)
+        .filter(ee.Filter.lte("CLOUD_COVERAGE_ASSESSMENT", 10))
+        .filterDate("2022-01-01", "2022-03-01")
+    )
+    return col
+
+
+@pytest.fixture
 def s2_image_overlay() -> ee.Geometry:
     """A Geometry Overlay."""
     return ee.Geometry.Polygon(
