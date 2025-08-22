@@ -1,8 +1,10 @@
 """Block for Google Earth Engine images and image collections."""
 
+from __future__ import annotations
+
 import math
 from logging import getLogger
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import ee
 import geetools  # noqa: F401
@@ -12,7 +14,9 @@ from geepillow.blocks import DEFAULT_MODE, Block, FontType, ImageBlock, Position
 from geepillow.colors import Color
 from geepillow.grids import Grid
 from geepillow.image import from_eeimage
-from geepillow.strips import Strip
+
+if TYPE_CHECKING:
+    pass
 
 logger = getLogger(__name__)
 
@@ -231,10 +235,16 @@ class EEImageCollectionGrid(Grid):
     def n_columns(self) -> int:
         """Number of columns."""
         if self._n_columns is not None:
-            n_columns = self._n_columns
+            return self._n_columns
+        elif self._n_rows is not None:
+            return math.ceil(len(self.image_ids) / self._n_rows)
         else:
-            n_columns = math.ceil(len(self.image_ids) / self._n_rows)
-        return n_columns
+            if self._image_dimensions:
+                return math.floor(
+                    (self.dimensions[0] + self.x_space) / (self._image_dimensions[0] + self.x_space)
+                )
+            else:
+                return 3
 
     @property
     def n_last(self) -> int:
@@ -252,9 +262,11 @@ class EEImageCollectionGrid(Grid):
             n_rows += 1
         return n_rows
 
-    def make_image_block(self, image: ee.Image) -> EEImageBlock | Strip:
+    def make_image_block(self, image: ee.Image) -> Block:
         """Make the block for the image and text block if needed."""
-        block = EEImageBlock(
+        from geepillow.strips import Strip
+
+        image_block = EEImageBlock(
             image,
             self.viz_params,
             self.image_dimensions,
@@ -263,25 +275,28 @@ class EEImageCollectionGrid(Grid):
             self.overlay,
             self.overlay_style,
         )
-        if self.text_pattern is not None:
-            # all properties on the server-side
-            properties = image.toDictionary(image.propertyNames())
-            formatted = ee.String(self.text_pattern).geetools.format(properties)
-            text = formatted.getInfo()
-            txt_block = TextBlock(text, self.text_inner_position, font=self.font)
-            blocks = [txt_block, block] if self.text_position == "top" else [block, txt_block]
-            block = Strip(blocks, self.y_space, "vertical")
-        return block
+        if self.text_pattern is None:
+            return image_block
+
+        # all properties on the server-side
+        properties = image.toDictionary(image.propertyNames())
+        formatted = ee.String(self.text_pattern).geetools.format(properties)
+        text = formatted.getInfo()
+        txt_block = TextBlock(text, self.text_inner_position, font=self.font)
+        strip_blocks = (
+            [txt_block, image_block] if self.text_position == "top" else [image_block, txt_block]
+        )
+        return Strip(strip_blocks, self.y_space, "vertical")
 
     def make_blocks(self) -> list[list[Block]]:
         """Make the list of blocks for the grid."""
-        blocks = []
+        grid_blocks: list[list[Block]] = []
         i = 0
         while i < len(self.image_ids):
-            row = []
+            row: list[Block] = []
             if (
-                len(blocks) == self.n_rows - 1
-                and len(blocks[-1]) == self.n_columns
+                len(grid_blocks) == self.n_rows - 1
+                and len(grid_blocks[-1]) == self.n_columns
                 and self.n_last > 0
             ):
                 columns = range(self.n_last)
@@ -292,8 +307,8 @@ class EEImageCollectionGrid(Grid):
                 eeimage = ee.Image(
                     self.collection.filter(ee.Filter.eq("system:index", iid)).first()
                 )
-                block = self.make_image_block(eeimage)
-                row.append(block)
+                item_block = self.make_image_block(eeimage)
+                row.append(item_block)
                 i += 1
-            blocks.append(row)
-        return blocks
+            grid_blocks.append(row)
+        return grid_blocks

@@ -1,11 +1,16 @@
 """A strip is a concatenation of blacks."""
 
-from typing import Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 from PIL import Image as ImPIL
 
 from geepillow import colors
-from geepillow.blocks import DEFAULT_MODE, Block, ImageBlock, PositionType
+from geepillow.blocks import DEFAULT_MODE, Block, ImageBlock, PositionType, TextBlock
+
+if TYPE_CHECKING:
+    from geepillow.eeblocks import EEImageBlock, EEImageCollectionGrid
 
 
 class Strip(ImageBlock):
@@ -16,7 +21,9 @@ class Strip(ImageBlock):
 
     def __init__(
         self,
-        blocks: list[Block],
+        blocks: list[
+            Block | ImageBlock | TextBlock | EEImageBlock | EEImageCollectionGrid | Strip | None
+        ],
         space: float = 10,
         orientation: Literal["horizontal", "vertical"] = "horizontal",
         position: tuple | PositionType = "center-center",
@@ -66,37 +73,41 @@ class Strip(ImageBlock):
         )
 
     @property
-    def blocks(self):
+    def blocks(self) -> list[Block]:
         """Replace None with proxy blocks."""
-        blocks = []
+        active_blocks: list[Block] = []
         for block in self._blocks:
-            if block.mode != self.mode:
-                raise ValueError("All blocks must have the same mode.")
             if block is None:
                 continue
-            blocks.append(block)
-        return blocks
+            if block.mode != self.mode:
+                raise ValueError("All blocks must have the same mode.")
+            active_blocks.append(block)
+        return active_blocks
 
     @property
-    def strip_height(self):
+    def strip_height(self) -> float | int:
         """Height of the row (max of all blocks)."""
+        if not self.blocks:
+            return 0
         if self.orientation == "horizontal":
-            h = max([block.height for block in self.blocks if block is not None])
+            h = max(block.height for block in self.blocks)
         else:
-            blocks_height = sum([block.height for block in self.blocks])
+            blocks_height = sum(block.height for block in self.blocks)
             extra = (len(self.blocks) - 1) * self.space
             h = blocks_height + extra
         return h
 
     @property
-    def strip_width(self):
+    def strip_width(self) -> float | int:
         """Width of the row."""
+        if not self.blocks:
+            return 0
         if self.orientation == "horizontal":
-            blocks_width = sum([block.width for block in self.blocks])
+            blocks_width = sum(block.width for block in self.blocks)
             extra = (len(self.blocks) - 1) * self.space
             w = blocks_width + extra
         else:
-            w = max([block.width for block in self.blocks if block is not None])
+            w = max(block.width for block in self.blocks)
         return w
 
     @property

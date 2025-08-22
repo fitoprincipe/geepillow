@@ -11,7 +11,7 @@ If the user needs to add text overlaying the image, can do it using the PIL libr
 """
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Union
 
 from PIL import Image as ImPIL
 from PIL import ImageDraw
@@ -23,7 +23,7 @@ from geepillow.colors import Color
 DEFAULT_FONT = fonts.opensans_regular(12)
 DEFAULT_MODE = "RGBA"
 
-FontType = ImageFont | FreeTypeFont | TransposedFont
+FontType = Union[ImageFont, FreeTypeFont, TransposedFont]
 
 PositionType = Literal[
     "top-left",
@@ -129,7 +129,7 @@ class Block:
         """Set or modify the height of the block."""
         self._height = height
         size = list(self.size)
-        size[0] = height
+        size[1] = height
         self._size = tuple(size)
 
     @property
