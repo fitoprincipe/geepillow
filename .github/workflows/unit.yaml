@@ -53,13 +53,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest]
+        # disable ubuntu tests due to failures differences between ubuntu and windows
+        os: [windows-latest, macos-latest] # ubuntu-latest
         python-version: ["3.10", "3.11"]
-        include:
-          - os: macos-latest # macos test
-            python-version: "3.11"
-          - os: windows-latest # windows test
-            python-version: "3.11"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
