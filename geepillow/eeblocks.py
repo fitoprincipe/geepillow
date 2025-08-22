@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from logging import getLogger
-from typing import TYPE_CHECKING, Literal
+from typing import Any, Literal
 
 import ee
 import geetools  # noqa: F401
@@ -14,9 +14,6 @@ from geepillow.blocks import DEFAULT_MODE, Block, FontType, ImageBlock, Position
 from geepillow.colors import Color
 from geepillow.grids import Grid
 from geepillow.image import from_eeimage
-
-if TYPE_CHECKING:
-    pass
 
 logger = getLogger(__name__)
 
@@ -283,7 +280,7 @@ class EEImageCollectionGrid(Grid):
         formatted = ee.String(self.text_pattern).geetools.format(properties)
         text = formatted.getInfo()
         txt_block = TextBlock(text, self.text_inner_position, font=self.font)
-        strip_blocks = (
+        strip_blocks: list[Any] = (
             [txt_block, image_block] if self.text_position == "top" else [image_block, txt_block]
         )
         return Strip(strip_blocks, self.y_space, "vertical")
