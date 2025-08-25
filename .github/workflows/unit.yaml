@@ -51,7 +51,6 @@ jobs:
   build:
     needs: [lint, mypy]
     strategy:
-      fail-fast: true
       matrix:
         # disable ubuntu tests due to failures differences between ubuntu and windows
         os: [windows-latest, macos-latest] # ubuntu-latest
