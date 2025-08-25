@@ -1,15 +1,14 @@
 # Changes here will be overwritten by Copier
-_commit: 0.1.17
+_commit: 0.1.18
 _src_path: gh:12rambau/pypackage
 author_email: fitoprincipe82@gmail.com
 author_first_name: Rodrigo Esteban
 author_last_name: Principe
 author_orcid: 0000-0000-0000-0000
-creation_year: "2025"
+creation_year: '2025'
 github_repo_name: geepillow
 github_user: fitoprincipe
 project_name: GEE Pillow
 project_slug: geepillow
-short_description:
-  Download Satellite images from GEE as Pillow images and create
-  image strips and grids
+short_description: Download Satellite images from GEE as Pillow images and create
+    image strips and grids
