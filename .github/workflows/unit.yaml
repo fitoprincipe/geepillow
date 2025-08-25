@@ -52,8 +52,7 @@ jobs:
     needs: [lint, mypy]
     strategy:
       matrix:
-        # disable ubuntu tests due to failures differences between ubuntu and windows
-        os: [windows-latest, macos-latest] # ubuntu-latest
+        os: [windows-latest, macos-latest, ubuntu-latest]
         python-version: ["3.10", "3.11"]
     runs-on: ${{ matrix.os }}
     steps:
