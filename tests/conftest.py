@@ -125,6 +125,47 @@ def s2_image_overlay() -> ee.Geometry:
 
 
 @pytest.fixture
+def s2_image_overlay_styled() -> ee.FeatureCollection:
+    """Sentinel 2 image overlay styled."""
+    return ee.FeatureCollection(
+        [
+            ee.Feature(
+                ee.Geometry.Polygon(
+                    [
+                        [
+                            [-63.09246352191069, -27.543873828758713],
+                            [-63.09684088702299, -27.561452071810354],
+                            [-63.06740096087553, -27.566626083437992],
+                            [-63.06396773333647, -27.551255511600775],
+                        ]
+                    ]
+                ),
+                {
+                    "system:index": "0",
+                    "style": {"color": "blue", "fillColor": "#00000000", "width": 3},
+                },
+            ),
+            ee.Feature(
+                ee.Geometry.Polygon(
+                    [
+                        [
+                            [-63.09031775469877, -27.558484513919126],
+                            [-63.09083273882963, -27.561452071810354],
+                            [-63.067272214842816, -27.56571304028485],
+                            [-63.066585569335004, -27.56263146356792],
+                        ]
+                    ]
+                ),
+                {
+                    "system:index": "1",
+                    "style": {"color": "red", "fillColor": "#00000000", "width": 3},
+                },
+            ),
+        ]
+    )
+
+
+@pytest.fixture
 def s2_image_viz() -> dict:
     """Sentinel 2 image visualization parameters."""
     return {"bands": ["B8", "B11", "B4"], "min": 0, "max": 4500}

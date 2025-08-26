@@ -40,3 +40,20 @@ class TestImage:
         )
 
         pil_image_regression.check(image)
+
+    def test_from_eeimage_overlay_styled(
+        self, s2_collection, s2_image_overlay_styled, pil_image_regression
+    ):
+        """Test eeimage module using an overlay fc with per-feature styling."""
+        viz_params = {"bands": ["B8", "B11", "B4"], "min": 0, "max": 4500}
+        s2_i = s2_collection.filterDate("2022-02-26", "2022-02-27").first()
+        image = from_eeimage(
+            s2_i,
+            dimensions=(500, 500),
+            viz_params=viz_params,
+            region=s2_image_overlay_styled.geometry().bounds().buffer(1000),
+            overlay=s2_image_overlay_styled,
+            style_property="style",
+        )
+
+        pil_image_regression.check(image)
