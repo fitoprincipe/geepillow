@@ -15,6 +15,7 @@ jobs:
     secrets:
       EARTHENGINE_SERVICE_ACCOUNT: ${{ secrets.EARTHENGINE_SERVICE_ACCOUNT }}
       EARTHENGINE_PROJECT: ${{ secrets.EARTHENGINE_PROJECT }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   deploy:
     needs: [tests]
