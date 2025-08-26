@@ -18,6 +18,7 @@ def from_eeimage(
     region: ee.Geometry | ee.Feature | None = None,
     overlay: ee.FeatureCollection | ee.Feature | ee.Geometry | None = None,
     overlay_style: dict | None = None,
+    style_property: str | None = None,
 ) -> Image:
     """Create a Pillow Image from an ee.Image.
 
@@ -32,11 +33,16 @@ def from_eeimage(
             - palette: a list of colors to use as a palette. Will only work with one single band.
         scale: spatial resolution of the image. If None it'll use the image scale.
         region: the region to extract the image from. If None it'll use the boundaries of the image.
-        overlay: a vector layer to overlay on top of the image
-        overlay_style: style of the vector layer to overlay
+        overlay: a vector layer to overlay on top of the image.
+        overlay_style: style of the vector layer to overlay.
+        style_property: A per-feature property expected to contain a dictionary. Values in the dictionary override any
+            default values for that feature.
     """
     viz_params = viz_params or dict(min=0, max=1)
     overlay_style = overlay_style or dict(width=2, fillColor=colors.create("white").hex(0))
+    if style_property is not None:
+        overlay_style["styleProperty"] = style_property
+
     if scale is not None:
         proj = image.select([0]).projection().atScale(scale)
         image = image.reproject(proj)
