@@ -121,3 +121,21 @@ class TestEEImageCollectionBlock:
             overlay_style={"color": "red", "fillColor": "#00000000"},
         )
         pil_image_regression.check(block.image)
+
+    def test_eeimagecollection_overlay_styled(
+        self, s2_collection, s2_image_overlay_styled, s2_image_viz, pil_image_regression
+    ):
+        """Test EEImageCollectionBlock with overlay with per-feature styling."""
+        text_pattern = "Date: {system:time_start%tdd/MM/yyyy}"
+        block = eeblocks.EEImageCollectionGrid(
+            collection=s2_collection,
+            n_columns=4,
+            text_pattern=text_pattern,
+            text_position="bottom",
+            viz_params=s2_image_viz,
+            scale=30,
+            region=s2_image_overlay_styled.geometry().bounds().buffer(1000),
+            overlay=s2_image_overlay_styled,
+            style_property="style",
+        )
+        pil_image_regression.check(block.image)
