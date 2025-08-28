@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "geepillow"
-version = "1.0.0"
+version = "1.1.0"
 description = "Download Satellite images from GEE as Pillow images and create image strips and grids"
 keywords = [
   "skeleton",
@@ -71,7 +71,7 @@ post-install-commands = ["pre-commit install"]
 [tool.commitizen]
 tag_format = "v$major.$minor.$patch$prerelease"
 update_changelog_on_bump = false
-version = "1.0.0"
+version = "1.1.0"
 version_files = [
     "pyproject.toml:version",
     "geepillow/__init__.py:__version__",
