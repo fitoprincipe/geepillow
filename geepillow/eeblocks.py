@@ -34,6 +34,7 @@ class EEImageBlock(ImageBlock):
         region: ee.Geometry | ee.Feature | None = None,
         overlay: ee.FeatureCollection | ee.Feature | ee.Geometry | None = None,
         overlay_style: dict | None = None,
+        style_property: str | None = None,
         position: tuple | PositionType = "center-center",
         fit_block: bool = True,
         keep_proportion: bool = True,
@@ -55,6 +56,8 @@ class EEImageBlock(ImageBlock):
             region: region of interest to "clip" the image to.
             overlay: a feature collection to overlay on top of the image.
             overlay_style: style of the overlay.
+            style_property: A per-feature property expected to contain a dictionary. Values in the dictionary override
+                any default values for that feature.
             position: position of the image inside the block.
             fit_block: if True the element's boundaries will never exceed the block.
             keep_proportion: keep proportion (ratio) of the image.
@@ -69,6 +72,7 @@ class EEImageBlock(ImageBlock):
         self.region = region
         self.overlay = overlay
         self.overlay_style = overlay_style
+        self.style_property = style_property
         self.scale = scale
         if size is None and isinstance(dimensions, (int, float)):
             size = (dimensions, dimensions)
@@ -82,6 +86,7 @@ class EEImageBlock(ImageBlock):
             region=self.region,
             overlay=overlay,
             overlay_style=overlay_style,
+            style_property=style_property,
         )
         super(EEImageBlock, self).__init__(
             image=image,
@@ -109,6 +114,7 @@ class EEImageCollectionGrid(Grid):
         font: str | FontType = DEFAULT_GRID_FONT,
         overlay: ee.FeatureCollection | ee.Feature | ee.Geometry | None = None,
         overlay_style: dict | None = None,
+        style_property: str | None = None,
         x_space: int = 10,
         y_space: int = 10,
         n_columns: int | None = None,
@@ -147,6 +153,8 @@ class EEImageCollectionGrid(Grid):
             region: region of interest to "clip" each image to. If None it uses the geometry of each image.
             overlay: a feature collection to overlay on top of the image.
             overlay_style: style of the overlay.
+            style_property: A per-feature property expected to contain a dictionary. Values in the dictionary override
+                any default values for that feature.
             image_dimensions: dimensions of the image, in pixels. If only one number is passed, it is used as the
                 maximum, and the other dimension is computed by proportional scaling.
             dimensions: dimensions of the grid image in pixels. The default value corresponds to the size of a Letter
@@ -176,6 +184,7 @@ class EEImageCollectionGrid(Grid):
         self.region = region
         self.overlay = overlay
         self.overlay_style = overlay_style
+        self.style_property = style_property
         self.text_pattern = text_pattern
         self.text_position = text_position
         self.image_position = image_position
@@ -265,12 +274,13 @@ class EEImageCollectionGrid(Grid):
 
         image_block = EEImageBlock(
             image,
-            self.viz_params,
-            self.image_dimensions,
-            self.scale,
-            self.region,
-            self.overlay,
-            self.overlay_style,
+            viz_params=self.viz_params,
+            dimensions=self.image_dimensions,
+            scale=self.scale,
+            region=self.region,
+            overlay=self.overlay,
+            overlay_style=self.overlay_style,
+            style_property=self.style_property,
         )
         if self.text_pattern is None:
             return image_block
