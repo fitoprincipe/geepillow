@@ -1,5 +1,7 @@
 """Test eeimage module."""
 
+import pytest
+
 from geepillow.image import from_eeimage
 
 
@@ -57,3 +59,8 @@ class TestImage:
         )
 
         pil_image_regression.check(image)
+
+    def test_from_eeimage_fail(self, fail_image, s2_image_overlay):
+        """Test eeimage module with invalid parameters."""
+        with pytest.raises(RuntimeError):
+            from_eeimage(fail_image, dimensions=500, region=s2_image_overlay)
