@@ -169,3 +169,9 @@ def s2_image_overlay_styled() -> ee.FeatureCollection:
 def s2_image_viz() -> dict:
     """Sentinel 2 image visualization parameters."""
     return {"bands": ["B8", "B11", "B4"], "min": 0, "max": 4500}
+
+
+@pytest.fixture
+def fail_image() -> ee.Image:
+    """An empty collection to test failure cases."""
+    return ee.ImageCollection.fromImages([ee.Image(1).toInt(), ee.Image(2).toFloat()]).mean()

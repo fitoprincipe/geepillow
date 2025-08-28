@@ -59,12 +59,26 @@ def from_eeimage(
     else:
         viz_image = image.visualize(**viz_params)
 
+    bands = "vis-gray" if len(viz_params.get("bands", [])) < 2 else "vis-red,vis-green,vis-blue"
+    _min = "0" if bands == "vis-gray" else "0,0,0"
+    _max = "255" if bands == "vis-gray" else "255,255,255"
     viz: dict[str, Any] = {
-        "bands": "vis-red,vis-green,vis-blue",
-        "min": "0,0,0",
-        "max": "255,255,255",
+        "bands": bands,
+        "min": _min,
+        "max": _max,
     }
     viz.update({"format": "png", "region": region, "dimensions": dimensions})
     url = viz_image.getThumbURL(viz)
     raw = requests.get(url)
+    if raw.status_code != requests.codes.ok:
+        error_message = raw.text
+        try:
+            # Earth Engine errors are typically returned as JSON.
+            error_details = raw.json()
+            # The actual message is nested under 'error' -> 'message'.
+            error_message = error_details.get("error", {}).get("message", error_message)
+        except requests.exceptions.JSONDecodeError:
+            # Not a JSON response, so we'll use the raw text as the error.
+            pass
+        raise RuntimeError(f"Error fetching image from Earth Engine: {error_message}")
     return Image.open(BytesIO(raw.content))
