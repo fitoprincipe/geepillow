@@ -301,14 +301,12 @@ class EEImageCollectionGrid(Grid):
         i = 0
         while i < len(self.image_ids):
             row: list[Block] = []
-            if (
-                len(grid_blocks) == self.n_rows - 1
-                and len(grid_blocks[-1]) == self.n_columns
-                and self.n_last > 0
-            ):
-                columns = range(self.n_last)
-            else:
+            # detect if we are in the last row and it is not complete
+            last_row = len(grid_blocks) == self.n_rows - 1
+            if not last_row:
                 columns = range(self.n_columns)
+            else:
+                columns = range(self.n_last if self.n_last > 0 else self.n_columns)
             for _ in columns:
                 iid = self.image_ids[i]
                 eeimage = ee.Image(
